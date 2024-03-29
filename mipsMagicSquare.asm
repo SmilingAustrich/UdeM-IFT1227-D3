@@ -9,17 +9,11 @@
 #      pour le cours IFT-1227, Architecture des ordinateurs I.
 #      
 # Date: 29 Mars 2024
-#
 # Auteurs: Tarik Hireche, Ilyesse Bouzommita, Erikha Kayembe Ngoma
 # Adresses de courriel:
 #   - tarik.hireche@umontreal.ca
 #   - ilyesse.bouzommita@umontreal.ca
 #   - erikha.kayembe.ngomba@umontreal.ca
-#
-# Matricules universitaires (codes permanents):
-#   - Tarik Hireche: 20230189
-#   - Ilyesse Bouzommita: 20276143
-#   - Erikha Kayembe Ngoma: 202xxx (
 # -------------------------------------------------------------------------------------
 
 
@@ -57,14 +51,14 @@ main:
 # Remplit la matrice avec des valeurs uniques saisies par l'utilisateur
 creerMat:
     # Initialiser le compteur de valeurs saisies
-    li $t2, 0
+    li $t2, 0 # $t2 = compteur
 saisieBoucle:
-    bge $t2, 16, finCreerMat # Sortir de la boucle si 16 valeurs ont été saisies
+    bge $t2, 16, finCreerMat # Sortir de la boucle si 16 valeurs ont été saisies - if compteur >= 16: finCreerMat
 
     # Afficher le message de saisie
-    li $v0, 4
-    la $a0, msgEntree
-    syscall
+    li $v0, 4 # on charge l'immédiat 4 dans le registre $v0 pour print un string
+    la $a0, msgEntree # on charge l'adresse mémoire du string dans le registre d'output $a0, correspond à la première lettre de la chaîne
+    syscall # On execute l'instruction
 
     # Lire une valeur saisie par l'utilisateur
     li $v0, 5
@@ -97,17 +91,17 @@ saisieBoucle:
 
 # Section pour afficher un message lorsque la valeur saisie n'est pas valide
 afficherNonValide:
-    li $v0, 4               # $v0 = 4 : Préparer syscall pour afficher une chaîne de caractères
-    la $a0, msgNonValide    # $a0 = adresse de msgNonValide : Charger l'adresse du message "non valide" dans $a0
-    syscall                 # Exécuter syscall : Afficher le message "non valide"
+    li $v0, 4               # $v0 = 4 : Prépare syscall pour afficher une chaîne de caractères
+    la $a0, msgNonValide    # $a0 = adresse de msgNonValide : Charge l'adresse du message "non valide" dans $a0
+    syscall                 # Exécuter syscall : Affiche le message "non valide"
     j saisieBoucle          # Sauter à saisieBoucle : Retourner à la boucle de saisie pour lire une nouvelle valeur
 
 # Section pour afficher un message lorsque la valeur saisie a déjà été entrée
 afficherDejaEntree:
-    li $v0, 4               # $v0 = 4 : Préparer syscall pour afficher une chaîne de caractères
+    li $v0, 4               # $v0 = 4 : Prépare syscall pour afficher une chaîne de caractères
     la $a0, msgDejaEntree   # $a0 = adresse de msgDejaEntree : Charger l'adresse du message "déjà entrée" dans $a0
-    syscall                 # Exécuter syscall : Afficher le message "déjà entrée"
-    j saisieBoucle          # Sauter à saisieBoucle : Retourner à la boucle de saisie pour lire une nouvelle valeur
+    syscall                 # Exécuter syscall : Affiche le message "déjà entrée"
+    j saisieBoucle          # Sauter à saisieBoucle : Retourne à la boucle de saisie pour lire une nouvelle valeur
 
 # Fin de la fonction creerMat et retour au point d'appel
 finCreerMat:
@@ -115,8 +109,9 @@ finCreerMat:
 
 
 # Fonction afficherMat - Affiche la matrice dans un format 4x4
-# Paramètres: aucun (utilise des valeurs globales)
+# Paramètres: utilise des valeurs globales comme adrMatrice et la largeur de la matrice.
 # Retourne: rien
+# Fonction afficherMat - Affiche la matrice dans un format 4x4 avec alignement
 afficherMat:
     li $t2, 0          # Compteur pour boucler sur les éléments de la matrice
     li $t0, 0x10040000 # Adresse de début de la matrice
@@ -129,15 +124,30 @@ afficherBoucle:
     bge $t2, 16, finAfficherMat # Sortir de la boucle si tous les éléments sont affichés
 
     # Calculer l'adresse de l'élément à afficher
-    sll $t3, $t2, 2     # Multiplier l'index par 4 pour obtenir l'offset de l'élément (car chaque entier est 4 octets)
-    add $t4, $t0, $t3   # Ajouter l'offset à l'adresse de base pour obtenir l'adresse de l'élément
-    lw $t5, ($t4)       # Charger la valeur de l'élément de la matrice
+    sll $t3, $t2, 2    # Multiplier l'index par 4 pour obtenir l'offset de l'élément
+    add $t4, $t0, $t3  # Ajouter l'offset à l'adresse de base pour obtenir l'adresse de l'élément
+    lw $t5, ($t4)      # Charger la valeur de l'élément de la matrice
 
+    # Vérifier si la valeur est inférieure à 10 et ajouter un espace supplémentaire si nécessaire afin d'aligner les nombres
+    blt $t5, 10, afficherEspaceSupplementaire
+
+afficherNombre:
     # Afficher l'élément
-    li $v0, 1
+    li $v0, 1 # on prepare $v0 pour afficher un int
     move $a0, $t5
     syscall
+    j afficherEspace
 
+afficherEspaceSupplementaire:
+    # Afficher un espace supplémentaire pour les nombres < 10 pour l'alignement entre les nombres avec deux chiffres vs 1 chiffre.
+    li $v0, 4
+    la $a0, espace
+    syscall
+
+    # Aller à l'affichage du nombre après avoir ajouté l'espace supplémentaire
+    j afficherNombre
+
+afficherEspace:
     # Après avoir affiché chaque élément, afficher un espace
     li $v0, 4
     la $a0, espace
@@ -152,7 +162,7 @@ afficherBoucle:
     beq $t7, $t6, nouvelleLigne  # Si $t7 == 3, cela signifie que nous avons traité un multiple de 4 éléments; passer à une nouvelle ligne
 
 continuerAffichage:
-    addi $t2, $t2, 1   # Incrémenter le compteur et continuer
+    addi $t2, $t2, 1  # Incrémenter le compteur et continuer
     j afficherBoucle
 
 nouvelleLigne:
@@ -180,13 +190,13 @@ estMagique:
 
     # Calculer la somme de référence avec la première ligne
     li $t3, 0                 # Compteur pour éléments dans la ligne
-calculSommeRef:
+calculSommeReference:
     bge $t3, $t1, continue    # Si on a fini avec la première ligne
     lw $t4, 0($t0)            # Charger l'élément de la matrice
     add $s0, $s0, $t4         # Ajouter à la somme de référence
     addi $t0, $t0, 4          # Passer à l'élément suivant
     addi $t3, $t3, 1          # Incrémenter le compteur d'éléments
-    j calculSommeRef          # Boucler
+    j calculSommeReference          # Boucler
 
 continue:
     sub $t0, $t0, 16          # Revenir au début de la matrice
@@ -219,9 +229,9 @@ finSommeLigneColonne:
     j verifLigneColonne          # Continuer la vérification
 
 verifDiagonales:
-    li $t2, 0                     # Réinitialiser le compteur pour les diagonales 
-    li $s3, 0                     # Réinitialiser la somme de la diagonale principale
-    li $s4, 0                     # Réinitialiser la somme de la diagonale secondaire
+    li $t2, 0                     # Réinitialiser le compteur pour les diagonales - diagCounter = 0
+    li $s3, 0                     # Réinitialiser la somme de la diagonale principale - firstDiagSum = 0
+    li $s4, 0                     # Réinitialiser la somme de la diagonale secondaire - secondDiagSum = 0
 
 calculDiagonales:
     li $t0, 0x10040000            # Assurer que $t0 pointe au début de la matrice (le premier élément)
@@ -229,7 +239,7 @@ calculDiagonales:
     li $s4, 0                     # Réinitialiser la somme de la diagonale secondaire
 
     # Calculer la somme de la diagonale principale (11, 22, 33, 44)
-    lw $t5, 0($t0)                # Charger 11
+    lw $t5, 0($t0)                # Charger 11 (0 octet de décalage)
     add $s3, $s3, $t5
     lw $t5, 20($t0)               # Charger 22 (décalage de 5 mots = 20 octets)
     add $s3, $s3, $t5
@@ -269,4 +279,4 @@ carreNonMagique:
 
 finProgramme:
     li $v0, 10                     # Terminer le programme
-    syscall
+    syscall			   # executer l'instruction de fin du programme
